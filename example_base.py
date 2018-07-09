@@ -1,29 +1,43 @@
+import time
+
 from ds_config import DSConfig
+
+TOKEN_REPLACEMENT_IN_MILLISECONDS = 10*60*1000
+TOKEN_EXPIRATION_IN_SECONDS = 3600
 
 
 class ExampleBase:
+    """
+    Example Base class
+    """
     accountID = None
     api_client = None
     _token = None
+    account = None
+    expiresIn = 0
 
     def __init__(self, api_client):
         ExampleBase.api_client = api_client
 
-    def checkToken(self):
-        if ExampleBase._token is None:#TODO:
-            self.updateToken()
+    def check_token(self):
+        milliseconds = int(round(time.time() * 1000))
+        if ExampleBase._token is None \
+                or ((milliseconds + TOKEN_REPLACEMENT_IN_MILLISECONDS) > ExampleBase.expiresIn):
+            self.update_token()
 
-    def updateToken(self):
+    def update_token(self):
         client = ExampleBase.api_client
 
         client.configure_jwt_authorization_flow(DSConfig.private_key_file(),
                                                                 DSConfig.aud(),
                                                                 DSConfig.client_id(),
                                                                 DSConfig.impersonated_user_guid(), 3600)
+
         account = self.get_account_info(client)
         client.host = account['base_uri']
         ExampleBase.accountID = account['account_id']
         ExampleBase._token = "DummyToken"
+        ExampleBase.expiresIn = 1000 * (int(round(time.time())) + TOKEN_EXPIRATION_IN_SECONDS)
 
     def get_account_info(self, client):
         client.host = DSConfig.authentication_url()
