@@ -59,7 +59,7 @@ class SendEnvelope(ExampleBase):
 
     def sendEnvelope(self):
 
-        self.checkToken()
+        self.check_token()
         envelope = self.createEnvelope()
         envelopeApi = EnvelopesApi(SendEnvelope.apiClient)
         results = envelopeApi.createEnvelope(SendEnvelope.accountID, envelope)

@@ -6,7 +6,7 @@ from example_base import ExampleBase
 class ListEnvelopes(ExampleBase):
 
     def list(self):
-        self.checkToken()
+        self.check_token()
 
         envelopeApi = EnvelopesApi(ListEnvelopes.api_client);
 
