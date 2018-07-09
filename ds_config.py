@@ -2,13 +2,13 @@ import configparser
 import os
 
 
-def loadFromProperties():
+def load_from_properties():
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config['Default']
 
 
-def loadFromEnv():
+def load_from_env():
     client_id = os.environ.get('DS_CLIENT_ID', None)
     if client_id is not None:
         return os.environ
@@ -26,10 +26,10 @@ class DSConfig:
         return instance
 
     def __init__(self):
-        self.config = loadFromEnv()
+        self.config = load_from_env()
 
         if self.config is None:
-            self.config = loadFromProperties()
+            self.config = load_from_properties()
 
     def _client_id(self):
         return self.config['DS_CLIENT_ID']
