@@ -1,8 +1,9 @@
 import time
 
 from ds_config import DSConfig
+from ds_helper import DSHelper
 
-TOKEN_REPLACEMENT_IN_MILLISECONDS = 10*60*1000
+TOKEN_REPLACEMENT_IN_MILLISECONDS = 10 * 60 * 1000
 TOKEN_EXPIRATION_IN_SECONDS = 3600
 
 
@@ -28,12 +29,18 @@ class ExampleBase:
     def update_token(self):
         client = ExampleBase.api_client
 
-        client.configure_jwt_authorization_flow(DSConfig.private_key_file(),
-                                                                DSConfig.aud(),
-                                                                DSConfig.client_id(),
-                                                                DSConfig.impersonated_user_guid(), 3600)
+        private_key_file = DSHelper.create_private_key_temp_file("private-key")
 
-        account = self.get_account_info(client)
+        client.configure_jwt_authorization_flow(private_key_file.name,
+                                                DSConfig.aud(),
+                                                DSConfig.client_id(),
+                                                DSConfig.impersonated_user_guid(), 3600)
+
+        private_key_file.close()
+
+        if ExampleBase.account is None:
+            account = self.get_account_info(client)
+
         client.host = account['base_uri']
         ExampleBase.accountID = account['account_id']
         ExampleBase._token = "DummyToken"
