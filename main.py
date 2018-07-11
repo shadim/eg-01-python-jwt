@@ -7,7 +7,7 @@ from send_envelope import SendEnvelope
 
 def main():
 
-    api_client = docusign.ApiClient("https://demo.docusign.net/restapi")
+    api_client = docusign.ApiClient()
     print("\nSending an envelope...")
     result = SendEnvelope(api_client).send_envelope()
 
