@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pprint import pprint
 
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,8 +18,8 @@ class DSHelper:
         return data
 
     @classmethod
-    def printPrettyJSON(cls, obj):
-        pass
+    def print_pretty_json(cls, obj):
+        pprint(obj)
 
     @classmethod
     def ensureDirExistance(cls, param):
