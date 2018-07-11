@@ -1,16 +1,66 @@
-from docusign_esign import EnvelopesApi, EnvelopeDefinition, Signer, CarbonCopy, SignHere, Tabs, Recipients
+# -*- coding: utf-8 -*-
+# coding: utf-8
+import base64
+
+from docusign_esign import EnvelopesApi, EnvelopeDefinition, Signer, CarbonCopy, SignHere, Tabs, Recipients, Document
 
 from ds_config import DSConfig
 from ds_helper import DSHelper
 from example_base import ExampleBase
 
-ENVELOPE_1_DOCUMENT_1 = ""
-DOC_2_DOCX = ""
-DOC_3_PDF = ""
+ENVELOPE_1_DOCUMENT_1 = b"<!DOCTYPE html>" \
+            b"<html>" \
+                b"<head>" \
+                  b"<meta charset=\"UTF-8\">" \
+                b"</head>" \
+                b"<body style=\"font-family:sans-serif;margin-left:2em;\">" \
+                b"<h1 style=\"font-family: 'Trebuchet MS', Helvetica, sans-serif;" \
+                     b"color: darkblue;margin-bottom: 0;\">World Wide Corp</h1>" \
+                b"<h2 style=\"font-family: 'Trebuchet MS', Helvetica, sans-serif;" \
+                     b"margin-top: 0px;margin-bottom: 3.5em;font-size: 1em;" \
+                     b"color: darkblue;\">Order Processing Division</h2>" \
+              b"<h4>Ordered by %s</h4>" \
+                b"<p style=\"margin-top:0em; margin-bottom:0em;\">Email:  %s </p>" \
+                b"<p style=\"margin-top:0em; margin-bottom:0em;\">Copy to: %s , %s </p>" \
+                b"<p style=\"margin-top:3em;\">" \
+              b" Candy bonbon pastry jujubes lollipop wafer biscuit biscuit. Topping brownie sesame snaps" \
+             b" sweet roll pie. Croissant danish biscuit soufflé caramels jujubes jelly. Dragée danish caramels lemon" \
+             b" drops dragée. Gummi bears cupcake biscuit tiramisu sugar plum pastry." \
+             b" Dragée gummies applicake pudding liquorice. Donut jujubes oat cake jelly-o. Dessert bear claw chocolate" \
+             b" cake gummies lollipop sugar plum ice cream gummies cheesecake." \
+                b"</p>" \
+                b"<!-- Note the anchor tag for the signature field is in white. -->" \
+                b"<h3 style=\"margin-top:3em;\">Agreed: <span style=\"color:white;\">**signature_1**/</span></h3>" \
+                b"</body>" \
+             b"</html>".format(DSConfig.signer_name(), DSConfig.signer_email(), DSConfig.cc_name(), DSConfig.cc_email())
+
+DOC_2_DOCX = "World_Wide_Corp_Battle_Plan_Trafalgar.docx"
+DOC_3_PDF = "World_Wide_Corp_lorem.pdf"
 
 
-def createDocumentFromTemplate(id, name, fileExtension, content):
-    return ""
+def create_document_from_template(id, name, file_extension, content):
+    """
+    create document from template content
+    :param id:
+    :param name:
+    :param file_extension:
+    :param content:
+    :return:
+    """
+    document = Document()
+
+    base64_content = base64.b64encode(content)
+
+    document.document_base64 = base64_content
+
+    # can be different from actual file name
+    document.name = name
+    # Source data format.Signed docs are always pdf.
+    document.file_extension = file_extension
+    # a label used to reference the doc
+    document.document_id = id
+
+    return document
 
 
 def createSigner():
@@ -57,24 +107,24 @@ class SendEnvelope(ExampleBase):
     def __init__(self, api_client):
         ExampleBase.__init__(self, api_client)
 
-    def sendEnvelope(self):
+    def send_envelope(self):
 
         self.check_token()
-        envelope = self.createEnvelope()
-        envelopeApi = EnvelopesApi(SendEnvelope.apiClient)
-        results = envelopeApi.createEnvelope(SendEnvelope.accountID, envelope)
+        envelope = self.create_envelope()
+        envelope_api = EnvelopesApi(SendEnvelope.api_client)
+        results = envelope_api.create_envelope(SendEnvelope.accountID, envelope_definition=envelope)
         return results
 
-    def createEnvelope(self):
-        envelopeDefinition = EnvelopeDefinition()
-        envelopeDefinition.email_subject = "Please sign this document sent from Node SDK"
+    def create_envelope(self):
+        envelope_definition = EnvelopeDefinition()
+        envelope_definition.email_subject = "Please sign this document sent from Node SDK"
 
-        doc1 = createDocumentFromTemplate("1", "Order acknowledgement", "html", ENVELOPE_1_DOCUMENT_1)
-        doc2 = createDocumentFromTemplate("2", "Battle Plan", "docx", DSHelper.readContent(DOC_2_DOCX))
-        doc3 = createDocumentFromTemplate("3", "Lorem Ipsum", "pdf", DSHelper.readContent(DOC_3_PDF))
+        doc1 = create_document_from_template("1", "Order acknowledgement", "html", ENVELOPE_1_DOCUMENT_1)
+        doc2 = create_document_from_template("2", "Battle Plan", "docx", DSHelper.read_content(DOC_2_DOCX))
+        doc3 = create_document_from_template("3", "Lorem Ipsum", "pdf", DSHelper.read_content(DOC_3_PDF))
 
         # The order in the docs array determines the order in the envelope
-        envelopeDefinition.setDocuments([doc1, doc2, doc3])
+        envelope_definition.documents = [doc1, doc2,doc3]
         # create a signer recipient to sign the document, identified by name and email
         # We're setting the parameters via the object creation
         signer1 = createSigner()
@@ -88,20 +138,20 @@ class SendEnvelope(ExampleBase):
         # Create signHere fields (also known as tabs) on the documents,
         # We're using anchor (autoPlace) positioning
         #
-        # The DocuSign platform seaches throughout your envelope's
+        # The DocuSign platform searches throughout your envelope's
         # documents for matching anchor strings. So the
         # sign_here_2 tab will be used in both document 2 and 3 since they
         # use the same anchor string for their "signer 1" tabs.
-        signHere1 = createSignHere("**signature_1**", "pixels", "20", "10")
-        signHere2 = createSignHere("/sn1/", "pixels", "20", "10")
+        sign_here1 = createSignHere("**signature_1**", "pixels", "20", "10")
+        sign_here2 = createSignHere("/sn1/", "pixels", "20", "10")
         # Tabs are set per recipient / signer
-        setSignerTabs(signer1, [signHere1, signHere2])
+        setSignerTabs(signer1, [sign_here1, sign_here2])
         # Add the recipients to the envelope object
         recipients = createRecipients(signer1, cc1)
-        envelopeDefinition.setRecipients(recipients)
+        envelope_definition.recipients = recipients
         # Request that the envelope be sent by setting |status| to "sent".
         # To request that the envelope be created as a draft, set to "created"
-        envelopeDefinition.setStatus("sent")
+        envelope_definition.status = "sent"
 
-        return envelopeDefinition
+        return envelope_definition
 

@@ -41,8 +41,9 @@ class ExampleBase:
         if ExampleBase.account is None:
             account = self.get_account_info(client)
 
-        client.host = account['base_uri']
+        ExampleBase.base_uri = account['base_uri'] + '/restapi'
         ExampleBase.accountID = account['account_id']
+        client.host = ExampleBase.base_uri
         ExampleBase._token = "DummyToken"
         ExampleBase.expiresIn = 1000 * (int(round(time.time())) + TOKEN_EXPIRATION_IN_SECONDS)
 
