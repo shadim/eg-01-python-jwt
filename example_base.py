@@ -31,7 +31,7 @@ class ExampleBase:
 
         private_key_file = DSHelper.create_private_key_temp_file("private-key")
 
-        print (f"Requesting {DSConfig.aud()} an access token via JWT grant...", end='')
+        print ("Requesting an access token via JWT grant...", end='')
         client.configure_jwt_authorization_flow(private_key_file.name,
                                                 DSConfig.aud(),
                                                 DSConfig.client_id(),
