@@ -1,22 +1,10 @@
 import configparser
+import itertools
 import os
-
-
-def load_from_properties():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    return config['Default']
-
-
-def load_from_env():
-    client_id = os.environ.get('DS_CLIENT_ID', None)
-    if client_id is not None:
-        return os.environ
-    return None
-
 
 class DSConfig:
     instance = None
+    config = {}
 
     @staticmethod
     def getInstance():
@@ -26,10 +14,34 @@ class DSConfig:
         return instance
 
     def __init__(self):
-        self.config = load_from_env()
+        client_id = os.environ.get('DS_CLIENT_ID', None)
+        if client_id is not None:
+            self.config["DS_CLIENT_ID"] = client_id
+            self.config["DS_AUTH_SERVER"] = os.environ.get("DS_AUTH_SERVER")
+            self.config["DS_IMPERSONATED_USER_GUID"] = os.environ.get("DS_IMPERSONATED_USER_GUID")
+            self.config["DS_TARGET_ACCOUNT_ID"] = os.environ.get("DS_TARGET_ACCOUNT_ID")
+            self.config["DS_SIGNER_1_EMAIL"] = os.environ.get("DS_SIGNER_1_EMAIL")
+            self.config["DS_SIGNER_1_NAME"] = os.environ.get("DS_SIGNER_1_NAME")
+            self.config["DS_CC_1_EMAIL"] = os.environ.get("DS_CC_1_EMAIL")
+            self.config["DS_CC_1_NAME"] = os.environ.get("DS_CC_1_NAME")
+            self.config["DS_PRIVATE_KEY"] = os.environ.get("DS_PRIVATE_KEY")
+        else:
+            ini_file = 'ds_config.ini'
+            if os.path.isfile(ini_file):
+                config_parser = configparser.ConfigParser()
+                with open(ini_file) as fp:
+                    # Enable ini file to not have explicit global section
+                    config_parser.read_file(itertools.chain(['[global]'], fp), source=ini_file)
+                self.config = config_parser['global']
+            else:
+                raise Exception(f"Missing config file |{ini_file}| and environment variables are not set.")
 
-        if self.config is None:
-            self.config = load_from_properties()
+    def _auth_server(self):
+        return self.config['DS_AUTH_SERVER']
+
+    @staticmethod
+    def auth_server():
+        return DSConfig.getInstance()._auth_server()
 
     def _client_id(self):
         return self.config['DS_CLIENT_ID']
@@ -51,11 +63,6 @@ class DSConfig:
     @staticmethod
     def target_account_id():
         return DSConfig.getInstance()._target_account_id()
-
-    @staticmethod
-    def oauth_redirect_uri():
-        return "https://www.docusign.com"
-
 
     def _signer_email(self):
         return self.config["DS_SIGNER_1_EMAIL"]
@@ -85,13 +92,6 @@ class DSConfig:
     def cc_name():
         return DSConfig.getInstance()._cc_name();
 
-    def _private_key_file(self):
-        return self.config["DS_PRIVATE_KEY_FILE"]
-
-    @staticmethod
-    def private_key_file():
-        return DSConfig.getInstance()._private_key_file()
-
     def _private_key(self):
         return self.config["DS_PRIVATE_KEY"]
 
@@ -100,12 +100,15 @@ class DSConfig:
         return DSConfig.getInstance()._private_key()
 
     @staticmethod
-    def authentication_url():
-        return "https://account-d.docusign.com"
-
-    @staticmethod
     def aud():
-        return "account-d.docusign.com"
+        auth_server = DSConfig.getInstance()._auth_server()
+
+        if 'https://' in auth_server:
+            aud = auth_server[8:]
+        else: # assuming http://blah
+            aud = auth_server[7:]
+
+        return aud
 
     @staticmethod
     def api():

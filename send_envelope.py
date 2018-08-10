@@ -8,51 +8,56 @@ from ds_config import DSConfig
 from ds_helper import DSHelper
 from example_base import ExampleBase
 
-ENVELOPE_1_DOCUMENT_1 = b"<!DOCTYPE html>" \
-            b"<html>" \
-                b"<head>" \
-                  b"<meta charset=\"UTF-8\">" \
-                b"</head>" \
-                b"<body style=\"font-family:sans-serif;margin-left:2em;\">" \
-                b"<h1 style=\"font-family: 'Trebuchet MS', Helvetica, sans-serif;" \
-                     b"color: darkblue;margin-bottom: 0;\">World Wide Corp</h1>" \
-                b"<h2 style=\"font-family: 'Trebuchet MS', Helvetica, sans-serif;" \
-                     b"margin-top: 0px;margin-bottom: 3.5em;font-size: 1em;" \
-                     b"color: darkblue;\">Order Processing Division</h2>" \
-              b"<h4>Ordered by %s</h4>" \
-                b"<p style=\"margin-top:0em; margin-bottom:0em;\">Email:  %s </p>" \
-                b"<p style=\"margin-top:0em; margin-bottom:0em;\">Copy to: %s , %s </p>" \
-                b"<p style=\"margin-top:3em;\">" \
-              b" Candy bonbon pastry jujubes lollipop wafer biscuit biscuit. Topping brownie sesame snaps" \
-             b" sweet roll pie. Croissant danish biscuit soufflé caramels jujubes jelly. Dragée danish caramels lemon" \
-             b" drops dragée. Gummi bears cupcake biscuit tiramisu sugar plum pastry." \
-             b" Dragée gummies applicake pudding liquorice. Donut jujubes oat cake jelly-o. Dessert bear claw chocolate" \
-             b" cake gummies lollipop sugar plum ice cream gummies cheesecake." \
-                b"</p>" \
-                b"<!-- Note the anchor tag for the signature field is in white. -->" \
-                b"<h3 style=\"margin-top:3em;\">Agreed: <span style=\"color:white;\">**signature_1**/</span></h3>" \
-                b"</body>" \
-             b"</html>".format(DSConfig.signer_name(), DSConfig.signer_email(), DSConfig.cc_name(), DSConfig.cc_email())
+ENVELOPE_1_DOCUMENT_1 = f"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body style="font-family:sans-serif;margin-left:2em;">
+        <h1 style="font-family: 'Trebuchet MS', Helvetica, sans-serif;
+                color: darkblue;margin-bottom: 0;">World Wide Corp</h1>
+        <h2 style="font-family: 'Trebuchet MS', Helvetica, sans-serif;
+                margin-top: 0px;margin-bottom: 3.5em;font-size: 1em;
+                color: darkblue;">Order Processing Division</h2>
+        <h4>Ordered by {DSConfig.signer_name()}</h4>
+        <p style="margin-top:0em; margin-bottom:0em;">Email:  {DSConfig.signer_email()} </p>
+        <p style="margin-top:0em; margin-bottom:0em;">Copy to: {DSConfig.cc_name()} , {DSConfig.cc_email()} </p>
+        <p style="margin-top:3em;">
+            Candy bonbon pastry jujubes lollipop wafer biscuit biscuit. Topping brownie sesame snaps
+            sweet roll pie. Croissant danish biscuit soufflé caramels jujubes jelly. Dragée danish caramels lemon
+            drops dragée. Gummi bears cupcake biscuit tiramisu sugar plum pastry.
+            Dragée gummies applicake pudding liquorice. Donut jujubes oat cake jelly-o. Dessert bear claw chocolate
+            cake gummies lollipop sugar plum ice cream gummies cheesecake.
+        </p>
+        <!-- Note the anchor tag for the signature field is in white. -->
+        <h3 style="margin-top:3em;">Agreed: <span style="color:white;">**signature_1**/</span></h3>
+    </body>
+</html>
+"""
 
 DOC_2_DOCX = "World_Wide_Corp_Battle_Plan_Trafalgar.docx"
 DOC_3_PDF = "World_Wide_Corp_lorem.pdf"
 
 
-def create_document_from_template(id, name, file_extension, content):
+def create_document(id, name, file_extension, content):
     """
-    create document from template content
+    create document from HTML content
     :param id:
     :param name:
     :param file_extension:
-    :param content:
+    :param content:  # either a string or bytes
     :return:
     """
+
     document = Document()
+    if isinstance(content, str):
+        content_bytes = content.encode()
+    else:
+        content_bytes = content
 
-    base64_content = base64.b64encode(content)
-
+    base64_content = base64.b64encode(content_bytes).decode('ascii')
     document.document_base64 = base64_content
-
     # can be different from actual file name
     document.name = name
     # Source data format.Signed docs are always pdf.
@@ -108,7 +113,6 @@ class SendEnvelope(ExampleBase):
         ExampleBase.__init__(self, api_client)
 
     def send_envelope(self):
-
         self.check_token()
         envelope = self.create_envelope()
         envelope_api = EnvelopesApi(SendEnvelope.api_client)
@@ -117,14 +121,14 @@ class SendEnvelope(ExampleBase):
 
     def create_envelope(self):
         envelope_definition = EnvelopeDefinition()
-        envelope_definition.email_subject = "Please sign this document sent from Node SDK"
+        envelope_definition.email_subject = "Please sign this document sent from the Python SDK"
 
-        doc1 = create_document_from_template("1", "Order acknowledgement", "html", ENVELOPE_1_DOCUMENT_1)
-        doc2 = create_document_from_template("2", "Battle Plan", "docx", DSHelper.read_content(DOC_2_DOCX))
-        doc3 = create_document_from_template("3", "Lorem Ipsum", "pdf", DSHelper.read_content(DOC_3_PDF))
+        doc1 = create_document("1", "Order acknowledgement", "html", ENVELOPE_1_DOCUMENT_1)
+        doc2 = create_document("2", "Battle Plan", "docx", DSHelper.read_content(DOC_2_DOCX))
+        doc3 = create_document("3", "Lorem Ipsum", "pdf", DSHelper.read_content(DOC_3_PDF))
 
         # The order in the docs array determines the order in the envelope
-        envelope_definition.documents = [doc1, doc2,doc3]
+        envelope_definition.documents = [doc1, doc2, doc3]
         # create a signer recipient to sign the document, identified by name and email
         # We're setting the parameters via the object creation
         signer1 = createSigner()
