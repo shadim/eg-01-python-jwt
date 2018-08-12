@@ -22,7 +22,7 @@ ENVELOPE_1_DOCUMENT_1 = f"""
                 color: darkblue;">Order Processing Division</h2>
         <h4>Ordered by {DSConfig.signer_name()}</h4>
         <p style="margin-top:0em; margin-bottom:0em;">Email:  {DSConfig.signer_email()} </p>
-        <p style="margin-top:0em; margin-bottom:0em;">Copy to: {DSConfig.cc_name()} , {DSConfig.cc_email()} </p>
+        <p style="margin-top:0em; margin-bottom:0em;">Copy to: {DSConfig.cc_name()}, {DSConfig.cc_email()} </p>
         <p style="margin-top:3em;">
             Candy bonbon pastry jujubes lollipop wafer biscuit biscuit. Topping brownie sesame snaps
             sweet roll pie. Croissant danish biscuit soufflé caramels jujubes jelly. Dragée danish caramels lemon
