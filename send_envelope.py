@@ -40,105 +40,55 @@ DOC_2_DOCX = "World_Wide_Corp_Battle_Plan_Trafalgar.docx"
 DOC_3_PDF = "World_Wide_Corp_lorem.pdf"
 
 
-def create_document(id, name, file_extension, content):
-    """
-    create document from HTML content
-    :param id:
-    :param name:
-    :param file_extension:
-    :param content:  # either a string or bytes
-    :return:
-    """
-
-    document = Document()
-    if isinstance(content, str):
-        content_bytes = content.encode()
-    else:
-        content_bytes = content
-
-    base64_content = base64.b64encode(content_bytes).decode('ascii')
-    document.document_base64 = base64_content
-    # can be different from actual file name
-    document.name = name
-    # Source data format.Signed docs are always pdf.
-    document.file_extension = file_extension
-    # a label used to reference the doc
-    document.document_id = id
-
-    return document
-
-
-def createSigner():
-    signer = Signer()
-    signer.email = DSConfig.signer_email()
-    signer.name = DSConfig.signer_name()
-    signer.recipient_id = "1"
-    signer.routing_order = "1"
-    return signer
-
-
-def createCarbonCopy():
-    cc = CarbonCopy()
-    cc.email = DSConfig.cc_email()
-    cc.name = DSConfig.cc_name()
-    cc.routing_order = "2"
-    cc.recipient_id = "2"
-    return cc
-
-
-def createSignHere(anchor_pattern, anchor_units, anchor_x_offset, anchor_y_offset):
-    signHere = SignHere()
-    signHere.anchor_string = anchor_pattern
-    signHere.anchor_units = anchor_units
-    signHere.anchor_x_offset = anchor_x_offset
-    signHere.anchor_y_offset = anchor_y_offset
-    return signHere
-
-
-def setSignerTabs(signer1, signers):
-    tabs = Tabs()
-    tabs.sign_here_tabs = signers
-    signer1.tabs = tabs
-
-
-def createRecipients(signer1, cc1):
-    recipients = Recipients()
-    recipients.signers = [signer1]
-    recipients.carbon_copies = [cc1]
-    return recipients
-
-
 class SendEnvelope(ExampleBase):
     def __init__(self, api_client):
         ExampleBase.__init__(self, api_client)
 
     def send_envelope(self):
         self.check_token()
-        envelope = self.create_envelope()
-        envelope_api = EnvelopesApi(SendEnvelope.api_client)
-        results = envelope_api.create_envelope(SendEnvelope.accountID, envelope_definition=envelope)
-        return results
+        # envelope = self.create_envelope()
+        envelope = EnvelopeDefinition()
+        envelope.email_subject = "Please sign this document sent from the Python SDK"
 
-    def create_envelope(self):
-        envelope_definition = EnvelopeDefinition()
-        envelope_definition.email_subject = "Please sign this document sent from the Python SDK"
+        doc1 = Document()
+        base64_content = base64.b64encode(ENVELOPE_1_DOCUMENT_1.encode()).decode('ascii')
+        doc1.document_base64 = base64_content
+        doc1.name = "Order acknowledgement"
+        doc1.file_extension = "html"
+        doc1.document_id = "1"
 
-        doc1 = create_document("1", "Order acknowledgement", "html", ENVELOPE_1_DOCUMENT_1)
-        doc2 = create_document("2", "Battle Plan", "docx", DSHelper.read_content(DOC_2_DOCX))
-        doc3 = create_document("3", "Lorem Ipsum", "pdf", DSHelper.read_content(DOC_3_PDF))
+        doc2 = Document()
+        doc2.document_base64 = base64.b64encode(DSHelper.read_content(DOC_2_DOCX))
+        doc2.name = "Battle Plan"
+        doc2.file_extension = "docx"
+        doc2.document_id = "2"
+
+        doc3 = Document()
+        doc3.document_base64 = base64.b64encode(DSHelper.read_content(DOC_2_DOCX))
+        doc3.name = "Lorem Ipsum"
+        doc3.file_extension = "pdf"
+        doc3.document_id = "3"
 
         # The order in the docs array determines the order in the envelope
-        envelope_definition.documents = [doc1, doc2, doc3]
+        envelope.documents = [doc1, doc2, doc3]
         # create a signer recipient to sign the document, identified by name and email
         # We're setting the parameters via the object creation
-        signer1 = createSigner()
+        signer1 = Signer()
+        signer1.email = DSConfig.signer_email()
+        signer1.name = DSConfig.signer_name()
+        signer1.recipient_id = "1"
+        signer1.routing_order = "1"
         # routingOrder (lower means earlier) determines the order of deliveries
         # to the recipients. Parallel routing order is supported by using the
         # same integer as the order for two or more recipients.
 
         # create a cc recipient to receive a copy of the documents, identified by name and email
         # We're setting the parameters via setters
-        cc1 = createCarbonCopy()
+        cc1 = CarbonCopy()
+        cc1.email = DSConfig.cc_email()
+        cc1.name = DSConfig.cc_name()
+        cc1.routing_order = "2"
+        cc1.recipient_id = "2"
         # Create signHere fields (also known as tabs) on the documents,
         # We're using anchor (autoPlace) positioning
         #
@@ -146,16 +96,31 @@ class SendEnvelope(ExampleBase):
         # documents for matching anchor strings. So the
         # sign_here_2 tab will be used in both document 2 and 3 since they
         # use the same anchor string for their "signer 1" tabs.
-        sign_here1 = createSignHere("**signature_1**", "pixels", "20", "10")
-        sign_here2 = createSignHere("/sn1/", "pixels", "20", "10")
+        sign_here1 = SignHere()
+        sign_here1.anchor_string = "**signature_1**"
+        sign_here1.anchor_units = "pixels"
+        sign_here1.anchor_x_offset = "20"
+        sign_here1.anchor_y_offset = "10"
+
+        sign_here2 = SignHere()
+        sign_here2.anchor_string = "/sn1/"
+        sign_here2.anchor_units = "pixels"
+        sign_here2.anchor_x_offset = "20"
+        sign_here2.anchor_y_offset = "10"
         # Tabs are set per recipient / signer
-        setSignerTabs(signer1, [sign_here1, sign_here2])
+        tabs = Tabs()
+        tabs.sign_here_tabs = [sign_here1, sign_here2]
+        signer1.tabs = tabs
         # Add the recipients to the envelope object
-        recipients = createRecipients(signer1, cc1)
-        envelope_definition.recipients = recipients
+        recipients = Recipients()
+        recipients.signers = [signer1]
+        recipients.carbon_copies = [cc1]
+        envelope.recipients = recipients
         # Request that the envelope be sent by setting |status| to "sent".
         # To request that the envelope be created as a draft, set to "created"
-        envelope_definition.status = "sent"
+        envelope.status = "sent"
 
-        return envelope_definition
+        envelope_api = EnvelopesApi(SendEnvelope.api_client)
+        results = envelope_api.create_envelope(SendEnvelope.accountID, envelope_definition=envelope)
 
+        return results
